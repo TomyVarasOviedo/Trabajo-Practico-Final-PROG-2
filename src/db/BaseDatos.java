@@ -36,11 +36,8 @@ public class BaseDatos {
         try {
             conexion = DriverManager.getConnection(url, "root", "batman");
             stmt = conexion.createStatement();
-            clientes = stmt.executeQuery("SELECT * FROM clientes;");
-            // productos = stmt.executeQuery("SELECT * FROM productos;");
             // stock = stmt.executeQuery("SELECT * FROM stock;");
             // ventas = stmt.executeQuery("SELECT * FROM ventas;");
-            // tipos = stmt.executeQuery("SELECT * FROM tipos;");
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -55,15 +52,21 @@ public class BaseDatos {
      * @return ArrayList con todos los clientes
      */
     public ArrayList<Clientes> obtenerClientes(){
+        try {
+            clientes = stmt.executeQuery("SELECT * FROM clientes;");
+        } catch (SQLException e) {
+            System.out.println("Error en la consulta");
+            e.printStackTrace();
+        }
         ArrayList<Clientes> aux = new ArrayList<Clientes>();
         try {
             while (clientes.next()) {
                 // Recorre cada registro
-                int dni = Integer.parseInt(clientes.getString(0));
-                String nombre = clientes.getString(1);
-                String apellido = clientes.getString(2);
-                String direccion = clientes.getString(3);
-                String fnacimiento = clientes.getString(4);
+                int dni = Integer.parseInt(clientes.getString("dni"));
+                String nombre = clientes.getString("nombre");
+                String apellido = clientes.getString("apellido");
+                String direccion = clientes.getString("direccion");
+                String fnacimiento = clientes.getString("fnacimiento");
                 System.out.println(dni+"-"+nombre+"-"+apellido+"-"+direccion+"-"+fnacimiento);
                 // aux.add(new Clientes(dni, nombre, apellido, direccion, fnacimiento));
             }
@@ -84,15 +87,15 @@ public class BaseDatos {
         try {
             consulta = stmt.executeQuery("SELECT productos.codigo, productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre, cant_stock, stock.fecha FROM productos INNER JOIN tipo ON productos.tipo = id_tipo INNER JOIN stock ON productos.codigo = stock.id_producto;");
             while (consulta.next()) {
-                String codigo = consulta.getString(0);
-                String nombre = consulta.getString(1);
-                String empresa = consulta.getString(2);
-                Double precio = Double.parseDouble(consulta.getString(3));
-                String fechaVecimiento = consulta.getString(4);
-                String tipo = consulta.getString(5);
-                int cantidad = Integer.parseInt(consulta.getString(6));
-                String fechaStock = consulta.getString(7);
-                System.out.println(codigo+"-"+nombre+"-"+empresa+"-"+consulta.getString(3)+"-"+fechaVecimiento+"-"+tipo+"-"+cantidad+"-"+fechaStock);
+                String codigo = consulta.getString("productos.codigo");
+                String nombre = consulta.getString("productos.nombre");
+                String empresa = consulta.getString("productos.empresa");
+                Double precio = Double.parseDouble(consulta.getString("productos.precio"));
+                String fechaVecimiento = consulta.getString("productos.fvencimiento");
+                String tipo = consulta.getString("tipo.nombre");
+                int cantidad = Integer.parseInt(consulta.getString("cant_stock"));
+                String fechaStock = consulta.getString("stock.fecha");
+                System.out.println(codigo+"-"+nombre+"-"+empresa+"-"+consulta.getString("productos.precio")+"-"+fechaVecimiento+"-"+tipo+"-"+cantidad+"-"+fechaStock);
                 aux.add(new Productos(codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
             }
         } catch (SQLException e) {
@@ -103,10 +106,36 @@ public class BaseDatos {
         }
         return aux;
     }
+    /**
+     * Metodo para obtener un Array con todos los tipos de productos que hay
+     * @return Array de tipo String con todos los tipos
+     */
+    public String[] obtenerTipo() {
+        String[] tiposArray={};
+        try {
+            tipos = stmt.executeQuery("SELECT * FROM tipo ORDER BY id_tipo DESC;");
+            tiposArray = new String[Integer.parseInt(tipos.getString("id_tipo"))];
+            int i=0;
+            while (tipos.next()) {
+                tiposArray[i] = tipos.getString("nombre");
+                i++;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error en la consulta");
+            e.printStackTrace();
+        }
+        return tiposArray;
+    }
     //-----------------------------
     //----METODOS DE INSERT--------
     //-----------------------------
-
+    public boolean agregarProducto(Productos p1) {
+        try {
+            consulta = stmt.executeQuery("INSERT INTO stock VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',);");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     //-----------------------------
     //-----METODOS DE UPDATE-------
     //-----------------------------
