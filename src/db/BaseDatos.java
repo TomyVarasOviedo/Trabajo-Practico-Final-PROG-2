@@ -26,6 +26,7 @@ public class BaseDatos {
     ResultSet consulta = null;
     String[] columnas = null;
     String url = "jdbc:mysql://localhost/supermercado";
+    private int insertRequest;
     //-----------------------------
     //-----CONSTRUCTOR-------------
     //-----------------------------
@@ -131,9 +132,11 @@ public class BaseDatos {
     //-----------------------------
     public boolean agregarProducto(Productos p1) {
         try {
-            consulta = stmt.executeQuery("INSERT INTO stock VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',);");
+            insertRequest = stmt.executeUpdate("INSERT INTO productos VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',);");
+            return (insertRequest==1)? true : false;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
     //-----------------------------
