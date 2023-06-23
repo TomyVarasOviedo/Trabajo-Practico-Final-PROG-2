@@ -8,7 +8,7 @@ public class Productos {
     String fvecimiento;
     String tipo;
     int cantidad;
-    public Productos(String codigo, String nombre, String empresa, Double precio, String fvecimiento, String tipo, int cantidad) {
+    public Productos(String codigo, String nombre, String empresa, Double precio, String fvecimiento, String tipo) {
         this.codigo = codigo;
         this.nombre = nombre;
         this.empresa = empresa;
@@ -34,7 +34,7 @@ public class Productos {
     public String getTipo() {
         return tipo;
     }
-    public int getCantidad() {
-        return cantidad;
+    public void setTipo(String tipo){
+        this.tipo = tipo;
     }
 }
