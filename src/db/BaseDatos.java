@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 import clases.Clientes;
+import clases.ProductoStock;
 import clases.Productos;
 /**
  * Clase para acceder a la base de datos
@@ -27,6 +28,7 @@ public class BaseDatos {
     String[] columnas = null;
     String url = "jdbc:mysql://localhost/supermercado";
     private int insertRequest;
+    private int updateRequest;
     //-----------------------------
     //-----CONSTRUCTOR-------------
     //-----------------------------
@@ -97,7 +99,7 @@ public class BaseDatos {
                 int cantidad = Integer.parseInt(consulta.getString("cant_stock"));
                 String fechaStock = consulta.getString("stock.fecha");
                 System.out.println(codigo+"-"+nombre+"-"+empresa+"-"+consulta.getString("productos.precio")+"-"+fechaVecimiento+"-"+tipo+"-"+cantidad+"-"+fechaStock);
-                aux.add(new Productos(codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
+                aux.add(new ProductoStock(codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -110,16 +112,14 @@ public class BaseDatos {
     /**
      * Metodo para obtener un Array con todos los tipos de productos que hay
      * @return Array de tipo String con todos los tipos
+     * @throws SQLException
      */
-    public String[] obtenerTipo() {
-        String[] tiposArray={};
+    public ArrayList<String> obtenerTipo(){
+        ArrayList<String> tiposArray= new ArrayList<String>();
         try {
             tipos = stmt.executeQuery("SELECT * FROM tipo ORDER BY id_tipo DESC;");
-            tiposArray = new String[Integer.parseInt(tipos.getString("id_tipo"))];
-            int i=0;
             while (tipos.next()) {
-                tiposArray[i] = tipos.getString("nombre");
-                i++;
+                tiposArray.add(tipos.getString("id_tipo") +","+tipos.getString("nombre"));
             }
         } catch (SQLException e) {
             System.out.println("Error en la consulta");
@@ -131,8 +131,17 @@ public class BaseDatos {
     //----METODOS DE INSERT--------
     //-----------------------------
     public boolean agregarProducto(Productos p1) {
+         ArrayList<String> tipos = obtenerTipo();
+         int numTipo=0;
+         for (String tipo : tipos) {
+        	 String[] tipoCampos = tipo.split(",");
+        	 System.out.println(tipoCampos.length);
+             if (tipoCampos[1].equals(p1.getTipo())) {
+                 numTipo = Integer.parseInt(tipoCampos[0]);
+             }
+         }
         try {
-            insertRequest = stmt.executeUpdate("INSERT INTO productos VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',);");
+            insertRequest = stmt.executeUpdate("INSERT INTO productos VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',"+numTipo+");");
             return (insertRequest==1)? true : false;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -142,4 +151,14 @@ public class BaseDatos {
     //-----------------------------
     //-----METODOS DE UPDATE-------
     //-----------------------------
+    public boolean modificarProductos(Productos p, String codigoProducto) {
+		try {
+			updateRequest = stmt.executeUpdate("UPDATE productos SET nombre = '"+p.getNombre()+"', empresa='"+p.getEmpresa()+"', precio= "+p.getPrecio()+", fvencimiento='"+p.getFvecimiento()+"', tipo="+p.getTipo()+" WHERE codigo='"+codigoProducto+"';");
+			return (updateRequest==1)? true:false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Error en la consulta");
+			return false;
+		}
+	}
 }
