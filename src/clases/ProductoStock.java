@@ -6,6 +6,10 @@ public class ProductoStock extends Productos{
 		super(codigo, nombre, empresa, precio, fvecimiento, tipo);
 		this.setCantidad(cantidad);
 	}
+	@Override
+	public String toString() {
+		return super.toString()+", cantidad=" + cantidad;
+	}
 	public int getCantidad() {
 		return cantidad;
 	}

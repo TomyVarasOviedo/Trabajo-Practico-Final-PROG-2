@@ -37,4 +37,9 @@ public class Productos {
     public void setTipo(String tipo){
         this.tipo = tipo;
     }
+	@Override
+	public String toString() {
+		return "codigo=" + codigo + ", nombre=" + nombre + ", empresa=" + empresa + ", precio=" + precio
+				+ ", fvecimiento=" + fvecimiento + ", tipo=" + tipo + ", cantidad=" + cantidad;
+	}
 }

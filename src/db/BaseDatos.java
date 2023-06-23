@@ -19,16 +19,16 @@ public class BaseDatos {
     //-----------------------------
     private Connection conexion = null;
     private Statement stmt = null;
-    ResultSet clientes = null;
-    ResultSet productos = null;
-    ResultSet stock = null;
-    ResultSet ventas = null;
-    ResultSet tipos = null;
-    ResultSet consulta = null;
-    String[] columnas = null;
-    String url = "jdbc:mysql://localhost/supermercado";
+    private ResultSet clientes = null;
+    private ResultSet productos = null;
+    private ResultSet stock = null;
+    private ResultSet ventas = null;
+    private ResultSet tipos = null;
+    private ResultSet consulta = null;
+    private String url = "jdbc:mysql://localhost/supermercado";
     private int insertRequest;
     private int updateRequest;
+    private int deleteRequest;
     //-----------------------------
     //-----CONSTRUCTOR-------------
     //-----------------------------
@@ -70,8 +70,7 @@ public class BaseDatos {
                 String apellido = clientes.getString("apellido");
                 String direccion = clientes.getString("direccion");
                 String fnacimiento = clientes.getString("fnacimiento");
-                System.out.println(dni+"-"+nombre+"-"+apellido+"-"+direccion+"-"+fnacimiento);
-                // aux.add(new Clientes(dni, nombre, apellido, direccion, fnacimiento));
+                aux.add(new Clientes(dni, nombre, apellido, direccion, fnacimiento));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -98,10 +97,9 @@ public class BaseDatos {
                 String tipo = consulta.getString("tipo.nombre");
                 int cantidad = Integer.parseInt(consulta.getString("cant_stock"));
                 String fechaStock = consulta.getString("stock.fecha");
-                System.out.println(codigo+"-"+nombre+"-"+empresa+"-"+consulta.getString("productos.precio")+"-"+fechaVecimiento+"-"+tipo+"-"+cantidad+"-"+fechaStock);
                 aux.add(new ProductoStock(codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
             }
-        } catch (SQLException e) {
+        }catch (SQLException e) {
             e.printStackTrace();
         }
         if (aux.isEmpty()) {
@@ -130,12 +128,20 @@ public class BaseDatos {
     //-----------------------------
     //----METODOS DE INSERT--------
     //-----------------------------
+    public boolean agregarClientes(Clientes c) {
+		try {
+			insertRequest = stmt.executeUpdate("INSERT INTO clientes VALUES ("+c.getDni()+", '"+c.getNombre()+"', '"+c.getApellido()+"','"+c.getDireccion()+"', '"+c.getFnacimiento()+"');");
+			return (insertRequest != 0)? true:false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
     public boolean agregarProducto(Productos p1) {
          ArrayList<String> tipos = obtenerTipo();
          int numTipo=0;
          for (String tipo : tipos) {
         	 String[] tipoCampos = tipo.split(",");
-        	 System.out.println(tipoCampos.length);
              if (tipoCampos[1].equals(p1.getTipo())) {
                  numTipo = Integer.parseInt(tipoCampos[0]);
              }
@@ -148,16 +154,46 @@ public class BaseDatos {
             return false;
         }
     }
+    public boolean agregarStock(Productos p, int cantidad) {
+		try {
+			insertRequest = stmt.executeUpdate("INSERT INTO stock VALUES (NULL, '"+p.getCodigo()+"', '03/20/2023', "+cantidad+");");
+			return (insertRequest!=0)? true:false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
     //-----------------------------
     //-----METODOS DE UPDATE-------
     //-----------------------------
     public boolean modificarProductos(Productos p, String codigoProducto) {
 		try {
 			updateRequest = stmt.executeUpdate("UPDATE productos SET nombre = '"+p.getNombre()+"', empresa='"+p.getEmpresa()+"', precio= "+p.getPrecio()+", fvencimiento='"+p.getFvecimiento()+"', tipo="+p.getTipo()+" WHERE codigo='"+codigoProducto+"';");
-			return (updateRequest==1)? true:false;
+			return (updateRequest!= 0)? true:false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.out.println("Error en la consulta");
+			return false;
+		}
+	}
+    //-----------------------------
+    //-----METODOS DE DELETE-------
+    //-----------------------------
+    public boolean eliminarClientes(int dni) {
+		try {
+			deleteRequest = stmt.executeUpdate("DELETE FROM clientes WHERE dni="+dni+";");
+			return (deleteRequest != 0)? true : false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+    public boolean eliminarProducto(String codigo) {
+		try {
+			deleteRequest = stmt.executeUpdate("DELETE FROM productos WHERE codigo='"+codigo+"';");
+			return (deleteRequest!=0)? true: false;
+		} catch (SQLException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
