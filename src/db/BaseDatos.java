@@ -4,12 +4,14 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
 import clases.Clientes;
 import clases.ProductoStock;
 import clases.Productos;
+import excepciones.StockVacio;
 /**
  * Clase para acceder a la base de datos
  */
@@ -87,8 +89,9 @@ public class BaseDatos {
     public ArrayList<Productos> obtenerStock() {
         ArrayList<Productos> aux = new ArrayList<Productos>();
         try {
-            consulta = stmt.executeQuery("SELECT productos.codigo, productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre, cant_stock, stock.fecha FROM productos INNER JOIN tipo ON productos.tipo = id_tipo INNER JOIN stock ON productos.codigo = stock.id_producto;");
+            consulta = stmt.executeQuery("SELECT stock.id_stock, productos.codigo, productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre, cant_stock, stock.fecha FROM productos INNER JOIN tipo ON productos.tipo = id_tipo INNER JOIN stock ON productos.codigo = stock.id_producto;");
             while (consulta.next()) {
+            	int idStock = Integer.parseInt(consulta.getString("stock.id_stock"));
                 String codigo = consulta.getString("productos.codigo");
                 String nombre = consulta.getString("productos.nombre");
                 String empresa = consulta.getString("productos.empresa");
@@ -97,7 +100,7 @@ public class BaseDatos {
                 String tipo = consulta.getString("tipo.nombre");
                 int cantidad = Integer.parseInt(consulta.getString("cant_stock"));
                 String fechaStock = consulta.getString("stock.fecha");
-                aux.add(new ProductoStock(codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
+                aux.add(new ProductoStock(idStock,codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
             }
         }catch (SQLException e) {
             e.printStackTrace();
@@ -128,13 +131,16 @@ public class BaseDatos {
     //-----------------------------
     //----METODOS DE INSERT--------
     //-----------------------------
-    public boolean agregarClientes(Clientes c) {
+    public String agregarClientes(Clientes c) {
 		try {
 			insertRequest = stmt.executeUpdate("INSERT INTO clientes VALUES ("+c.getDni()+", '"+c.getNombre()+"', '"+c.getApellido()+"','"+c.getDireccion()+"', '"+c.getFnacimiento()+"');");
-			return (insertRequest != 0)? true:false;
-		} catch (SQLException e) {
+			return (insertRequest != 0)? "Enviado correctamente":"Ocurrio un error al enviar";
+		}catch(SQLIntegrityConstraintViolationException e) {
+			return "El DNI del cliente ya se encuentra ingresado";
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
-			return false;
+			return "Error al agregar al cliente";
 		}
 	}
     public boolean agregarProducto(Productos p1) {
@@ -163,6 +169,30 @@ public class BaseDatos {
 			return false;
 		}
 	}
+    /**
+     * Metodo que agrega a la base de datos una venta realizada
+     * @param IDcliente ID del cliente que desea realizar la compra
+     * @param cantidadDeseada Cantidad que va a comprar el cliente
+     * @param p Producto que se encuentra en el stock y el cliente desea comprar
+     * @return Devuelve un texto con el resultado de la consulta
+     */
+    public String agregarVentas(int IDcliente,int cantidadDeseada, ProductoStock p) {
+		try {
+			if(cantidadDeseada < p.getCantidad()) {
+				double precio = p.getPrecio() * cantidadDeseada;
+				insertRequest = stmt.executeUpdate("INSERT INTO ventas VALUES(NULL, "+IDcliente+","+p.getIdStock()+",'',"+precio+");");
+				return (insertRequest != 0)? "Compra realizada correctamente" : "Ocurrio un error en la compra";
+			}else {
+				throw new StockVacio();
+			}
+		} catch(StockVacio e) {
+			return e.getMessage();
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			return "Ocurrio un error al realizar la compra, compruebe los datos";
+		}
+	}
     //-----------------------------
     //-----METODOS DE UPDATE-------
     //-----------------------------
@@ -179,6 +209,11 @@ public class BaseDatos {
     //-----------------------------
     //-----METODOS DE DELETE-------
     //-----------------------------
+    /**
+     * Metodo para eliminar un cliente de la base de datos
+     * @param dni Dni del cliente
+     * @return devulve verdadero si la consulta se realizo correctamente y falso si ocurrio algun problema
+     */
     public boolean eliminarClientes(int dni) {
 		try {
 			deleteRequest = stmt.executeUpdate("DELETE FROM clientes WHERE dni="+dni+";");
@@ -188,6 +223,11 @@ public class BaseDatos {
 			return false;
 		}
 	}
+    /**
+     * Metodo para eliminar un producto de la base de datos
+     * @param codigo Codigo del producto
+     * @return Devuelve verdadero si la consulta se realizo correctamente y falso si ocurrio algun problema
+     */
     public boolean eliminarProducto(String codigo) {
 		try {
 			deleteRequest = stmt.executeUpdate("DELETE FROM productos WHERE codigo='"+codigo+"';");
