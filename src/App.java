@@ -1,4 +1,5 @@
 import clases.Clientes;
+import clases.ProductoStock;
 import clases.Productos;
 import db.BaseDatos;
 
@@ -6,7 +7,7 @@ public class App {
     public static void main(String[] args) throws Exception {
         try {
             BaseDatos dBaseDatos = new BaseDatos();
-            dBaseDatos.agregarClientes(new Clientes(4567890,"marcelo","montinela", "calle2255, hidalgo","05/07/2005"));
+           System.out.println( dBaseDatos.agregarVentas(4567890,4, new ProductoStock(2,"sh345", "","",45.55,"","",20)));
         } catch (Exception e) {
             e.printStackTrace();
         }
