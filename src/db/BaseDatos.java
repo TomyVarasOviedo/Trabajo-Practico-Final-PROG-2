@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import clases.Clientes;
 import clases.ProductoStock;
 import clases.Productos;
+import clases.Ventas;
 import excepciones.StockVacio;
 /**
  * Clase para acceder a la base de datos
@@ -41,8 +42,6 @@ public class BaseDatos {
         try {
             conexion = DriverManager.getConnection(url, "root", "batman");
             stmt = conexion.createStatement();
-            // stock = stmt.executeQuery("SELECT * FROM stock;");
-            // ventas = stmt.executeQuery("SELECT * FROM ventas;");
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -86,8 +85,8 @@ public class BaseDatos {
      * Metodo que devuelve un ArrayList con el stock disponible
      * @return ArrayList con el stock disponible
      */
-    public ArrayList<Productos> obtenerStock() {
-        ArrayList<Productos> aux = new ArrayList<Productos>();
+    public ArrayList<ProductoStock> obtenerStock() {
+        ArrayList<ProductoStock> aux = new ArrayList<ProductoStock>();
         try {
             consulta = stmt.executeQuery("SELECT stock.id_stock, productos.codigo, productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre, cant_stock, stock.fecha FROM productos INNER JOIN tipo ON productos.tipo = id_tipo INNER JOIN stock ON productos.codigo = stock.id_producto;");
             while (consulta.next()) {
@@ -128,6 +127,43 @@ public class BaseDatos {
         }
         return tiposArray;
     }
+    public ArrayList<Ventas> obtenerVentas() {
+    	ArrayList<Ventas> aux = new ArrayList<Ventas>();
+    	try {
+			ventas = stmt.executeQuery("SELECT ventas.id_ventas,ventas.id_cliente, productos.codigo, productos.nombre, ventas.fecha, ventas.monto, ventas.cantidad FROM ventas INNER JOIN stock ON ventas.id_stock = stock.id_stock INNER JOIN productos ON productos.codigo = stock.id_producto;");
+			while (ventas.next()) {
+				int idVentas = Integer.parseInt(ventas.getString("ventas.id_ventas"));
+				int cliente = Integer.parseInt(ventas.getString("ventas.id_cliente"));
+				String codigo = ventas.getString("productos.codigo");
+				String nombreProducto = ventas.getString("productos.nombre");
+				String fecha = ventas.getString("ventas.fecha");
+				Double monto = Double.parseDouble(ventas.getString("ventas.monto"));
+				int cantidad = Integer.parseInt(ventas.getString("ventas.cantidad"));
+				aux.add(new Ventas(idVentas,cliente, codigo, nombreProducto, fecha, monto,cantidad));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+    	if(aux.isEmpty()) {
+    		aux=null;
+    	}
+    	return aux;
+	}
+    public Productos buscarProductoCodigo(String codigo) {
+		try {
+			consulta = stmt.executeQuery("SELECT productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre FROM productos INNER JOIN tipo ON productos.tipo = tipo.id_tipo WHERE productos.codigo = '"+codigo+"';");
+			consulta.next();
+			String nombre = consulta.getString("productos.nombre");
+			String empresa = consulta.getString("productos.empresa");
+			Double precio = Double.parseDouble(consulta.getString("productos.precio"));
+			String fecha = consulta.getString("productos.fvencimiento");
+			String tipo = consulta.getString("tipo.nombre");
+			return new Productos(codigo, nombre,empresa, precio, fecha,tipo);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
     //-----------------------------
     //----METODOS DE INSERT--------
     //-----------------------------
@@ -155,14 +191,22 @@ public class BaseDatos {
         try {
             insertRequest = stmt.executeUpdate("INSERT INTO productos VALUES ('"+p1.getCodigo()+"', '"+p1.getNombre()+"', '"+p1.getEmpresa()+"',"+p1.getPrecio()+",'"+p1.getFvecimiento()+"',"+numTipo+");");
             return (insertRequest==1)? true : false;
-        } catch (SQLException e) {
+        }catch(SQLIntegrityConstraintViolationException e) {
+        	return false;
+        }catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
     public boolean agregarStock(Productos p, int cantidad) {
 		try {
-			insertRequest = stmt.executeUpdate("INSERT INTO stock VALUES (NULL, '"+p.getCodigo()+"', '03/20/2023', "+cantidad+");");
+			if(this.buscarProductoCodigo(p.getCodigo()) == null) {
+				this.agregarProducto(p);
+				insertRequest = stmt.executeUpdate("INSERT INTO stock VALUES (NULL, '"+p.getCodigo()+"', '03/20/2023', "+cantidad+");");				
+			}else {
+				this.aumentarCantidadStock(cantidad, p.getCodigo());
+				return true;
+			}
 			return (insertRequest!=0)? true:false;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -206,6 +250,24 @@ public class BaseDatos {
 			return false;
 		}
 	}
+    public boolean restarCantidadStock(int cantidad, String codigo) {
+    	try {
+			updateRequest = stmt.executeUpdate("UPDATE stock SET cant_stock = cant_stock - "+cantidad+" WHERE id_producto = '"+codigo+"';");
+			return (updateRequest != 0)? true : false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+    }
+    public boolean aumentarCantidadStock(int cantidad, String codigo) {
+    	try {
+			updateRequest = stmt.executeUpdate("UPDATE stock SET cant_stock = cant_stock + "+cantidad+" WHERE id_producto = '"+codigo+"';");
+			return (updateRequest != 0)? true : false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+    }
     //-----------------------------
     //-----METODOS DE DELETE-------
     //-----------------------------

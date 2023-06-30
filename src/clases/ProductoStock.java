@@ -24,4 +24,6 @@ public class ProductoStock extends Productos{
 	public void setIdStock(int Id) {
 		this.idStock = Id;
 	}
+	
+	
 }
