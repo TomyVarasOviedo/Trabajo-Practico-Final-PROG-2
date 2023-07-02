@@ -74,7 +74,9 @@ public class Ventas {
 	public void setMonto(double monto) {
 		this.monto = monto;
 	}
-	
-	
+	@Override
+	public String toString() {
+		return idVenta + "," + dniCliente + "," + codigoProducto+ "," + nombreProducto + "," + cantidad + "," +fechaCompra+ "," + monto;
+	}
 
 }
