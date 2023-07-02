@@ -1,13 +1,13 @@
 ## SUPERMERCADO JAVA 
 
-En este práctico se implementarán las funciones necesarias para almacenar los productos de un
+>En este práctico se implementarán las funciones necesarias para almacenar los productos de un
 supermercado. Información a tener en cuenta de cada producto: código, descripción, stock, precio
 unitario, fecha de vencimiento y tipo de producto, por ejemplo: "L" para lácteos, "V" para
 verdulería, etc.
 
 ## ENUNCIADO DEL TRABAJO
 
-Funcionalidad del supermercado: la clave del diccionario es el código que deberá ser único
+>Funcionalidad del supermercado: la clave del diccionario es el código que deberá ser único
 y el valor de la clave estará formado por el resto de la información almacenados en una lista.
 - `Agregar un nuevo producto`
 - `Eliminar un producto dado su código`
