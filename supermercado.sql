@@ -50,12 +50,13 @@ DROP TABLE IF EXISTS `productos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `productos` (
-  `codigo` varchar(10) DEFAULT NULL,
+  `codigo` varchar(8) NOT NULL,
   `nombre` varchar(20) DEFAULT NULL,
   `empresa` varchar(20) DEFAULT NULL,
   `precio` float DEFAULT NULL,
   `fvencimiento` varchar(12) DEFAULT NULL,
-  `tipo` int DEFAULT NULL
+  `tipo` int DEFAULT NULL,
+  PRIMARY KEY (`codigo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -65,7 +66,6 @@ CREATE TABLE `productos` (
 
 LOCK TABLES `productos` WRITE;
 /*!40000 ALTER TABLE `productos` DISABLE KEYS */;
-INSERT INTO `productos` VALUES ('sh345','cepillo dental','colgate',45.55,'03/07/2023',1),('ert456','jamon','la nona',340.99,'03/07/2023',2),('yut456','tamogochi','nintendo',500,'-',2),('sh345','cepillo','bayer',345.667,'rtr',1),('ert583','','',56.9,'',3),('sh345','','',67.99,'',3);
 /*!40000 ALTER TABLE `productos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -82,7 +82,7 @@ CREATE TABLE `stock` (
   `fecha` varchar(12) DEFAULT NULL,
   `cant_stock` int DEFAULT NULL,
   PRIMARY KEY (`id_stock`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,7 +91,6 @@ CREATE TABLE `stock` (
 
 LOCK TABLES `stock` WRITE;
 /*!40000 ALTER TABLE `stock` DISABLE KEYS */;
-INSERT INTO `stock` VALUES (1,'sh345','02032001',31),(2,'sh345','03/20/2023',14),(4,'ert456','03/20/2023',50),(5,'yut456','03/20/2023',10),(6,'sh345','03/20/2023',16),(7,'ert583','03/20/2023',5),(8,'sh345','03/20/2023',16);
 /*!40000 ALTER TABLE `stock` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -106,7 +105,7 @@ CREATE TABLE `tipo` (
   `id_tipo` int NOT NULL AUTO_INCREMENT,
   `nombre` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id_tipo`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -115,7 +114,7 @@ CREATE TABLE `tipo` (
 
 LOCK TABLES `tipo` WRITE;
 /*!40000 ALTER TABLE `tipo` DISABLE KEYS */;
-INSERT INTO `tipo` VALUES (1,'farmaceutica'),(2,'carniceria'),(3,'farmacia');
+INSERT INTO `tipo` VALUES (1,'farmaceutica'),(2,'carniceria'),(3,'farmacia'),(4,'lacteos'),(5,'electrodomesticos'),(6,'snacks'),(7,'gaseosas'),(8,'bebidas'),(9,'limpieza'),(10,'electronica');
 /*!40000 ALTER TABLE `tipo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -134,7 +133,7 @@ CREATE TABLE `ventas` (
   `monto` float DEFAULT NULL,
   `cantidad` int DEFAULT NULL,
   PRIMARY KEY (`id_ventas`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -143,7 +142,6 @@ CREATE TABLE `ventas` (
 
 LOCK TABLES `ventas` WRITE;
 /*!40000 ALTER TABLE `ventas` DISABLE KEYS */;
-INSERT INTO `ventas` VALUES (1,2000,1,'02/03/2004',3000,0),(2,4567890,2,'',182.2,0),(3,2000,2,'03/07/2023',250.56,3);
 /*!40000 ALTER TABLE `ventas` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -156,4 +154,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-06-30 22:04:57
+-- Dump completed on 2023-07-03 20:52:44
