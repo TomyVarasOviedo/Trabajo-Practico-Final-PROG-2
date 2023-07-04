@@ -1,11 +1,11 @@
-## SUPERMERCADO JAVA 
+## _SUPERMERCADO JAVA_
 
 >En este práctico se implementarán las funciones necesarias para almacenar los productos de un
 supermercado. Información a tener en cuenta de cada producto: código, descripción, stock, precio
 unitario, fecha de vencimiento y tipo de producto, por ejemplo: "L" para lácteos, "V" para
 verdulería, etc.
 
-## ENUNCIADO DEL TRABAJO
+## _ENUNCIADO DEL TRABAJO_
 
 >Funcionalidad del supermercado: la clave del diccionario es el código que deberá ser único
 y el valor de la clave estará formado por el resto de la información almacenados en una lista.
@@ -24,6 +24,8 @@ y el valor de la clave estará formado por el resto de la información almacenad
 - `Si el producto vence en una semana hacer un 10% de descuento`
 - `Determinar el producto más vendido dependiendo del tipo de producto`
 
-## Dependency Management
+## _INTEGRANTES_
 
->The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+> - `Rocio Fernandez`
+> - `Manuela Maza`
+> - `Tomas Varas Oviedo`
