@@ -152,35 +152,13 @@ public class BaseDatos {
     public Productos buscarProductoCodigo(String codigo) {
 		try {
 			consulta = stmt.executeQuery("SELECT productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre FROM productos INNER JOIN tipo ON productos.tipo = tipo.id_tipo WHERE productos.codigo = '"+codigo+"';");
-			if(consulta.next()) {
-				String nombre = consulta.getString("productos.nombre");
-				String empresa = consulta.getString("productos.empresa");
-				Double precio = Double.parseDouble(consulta.getString("productos.precio"));
-				String fecha = consulta.getString("productos.fvencimiento");
-				String tipo = consulta.getString("tipo.nombre");
-				return new Productos(codigo, nombre,empresa, precio, fecha,tipo);
-			}else {
-				throw new StockVacio();
-			}
-		} catch(StockVacio e) {
-			return null;
-		}catch (SQLException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-    public ProductoStock buscarProductoStock(String codigo) {
-		try {
-			consulta = stmt.executeQuery("SELECT * FROM stock INNER JOIN productos ON stock.id_producto = productos.codigo INNER JOIN tipo ON productos.tipo = tipo.id_tipo WHERE productos.codigo = '"+codigo+"'");
 			consulta.next();
-			int idStock = Integer.parseInt(consulta.getString("stock.id_stock"));
 			String nombre = consulta.getString("productos.nombre");
 			String empresa = consulta.getString("productos.empresa");
 			Double precio = Double.parseDouble(consulta.getString("productos.precio"));
 			String fecha = consulta.getString("productos.fvencimiento");
 			String tipo = consulta.getString("tipo.nombre");
-			int cantidad = Integer.parseInt(consulta.getString("stock.cant_stock"));
-			return new ProductoStock(idStock, codigo, nombre, empresa, precio, fecha, tipo, cantidad);
+			return new Productos(codigo, nombre,empresa, precio, fecha,tipo);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
@@ -246,14 +224,12 @@ public class BaseDatos {
 		try {
 			if(cantidadDeseada < p.getCantidad()) {
 				double precio = p.getPrecio() * cantidadDeseada;
-				insertRequest = stmt.executeUpdate("INSERT INTO ventas VALUES(NULL, "+IDcliente+","+p.getIdStock()+",'',"+precio+","+cantidadDeseada+");");
-				this.restarCantidadStock(cantidadDeseada, p.getCodigo());
+				insertRequest = stmt.executeUpdate("INSERT INTO ventas VALUES(NULL, "+IDcliente+","+p.getIdStock()+",'',"+precio+");");
 				return (insertRequest != 0)? "Compra realizada correctamente" : "Ocurrio un error en la compra";
 			}else {
 				throw new StockVacio();
 			}
 		} catch(StockVacio e) {
-			e.mesaje();
 			return e.getMessage();
 		}
 		catch (SQLException e) {
@@ -317,21 +293,10 @@ public class BaseDatos {
     public boolean eliminarProducto(String codigo) {
 		try {
 			deleteRequest = stmt.executeUpdate("DELETE FROM productos WHERE codigo='"+codigo+"';");
-			this.eliminarStock(codigo);
 			return (deleteRequest!=0)? true: false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
 		}
 	}
-    public boolean eliminarStock(String idProducto) {
-    	try {
-			deleteRequest = stmt.executeUpdate("DELETE FROM stock WHERE id_producto = '"+idProducto+"';");
-			return (deleteRequest != 0)? true: false;
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		}
-    
-    }
 }
