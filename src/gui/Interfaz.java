@@ -11,6 +11,9 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
 
+import clases.CatalogoClientes;
+import clases.CatalogoStock;
+import clases.CatalogoVentas;
 import clases.Clientes;
 import clases.ProductoStock;
 import clases.Productos;
@@ -22,9 +25,18 @@ import java.util.ArrayList;
 import java.awt.event.ActionEvent;
 import java.awt.Choice;
 import java.awt.Color;
-
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+/**
+ * Clase que contiene la interfaz principal
+ *
+ */
 public class Interfaz extends JFrame implements ActionListener{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JTable tableStock;
 	private JTextField agregarProductoNombre;
 	private JTextField agregarProductoEmpresa;
@@ -41,11 +53,26 @@ public class Interfaz extends JFrame implements ActionListener{
 	private JButton stockButton;
 	private JButton usuario;
 	private JButton ventas;
-	BaseDatos db;
-
+	private JButton btnVentanaVender;
+	private BaseDatos db;
+	private ArrayList<ProductoStock> catalogoStock;
+	private ArrayList<Clientes> catalogoClientes;
+	private ArrayList<Ventas> catalogoVentas;
 //constructor 
-	public Interfaz(ArrayList <ProductoStock> CatalogoStock, ArrayList <Clientes> CatalogoClientes, ArrayList <Ventas> CatalogoVentas, ArrayList<String> tipos) throws HeadlessException {
+	/**
+	 * Constructor de la clase
+	 * @param catalogoStock Catalogo con todos los productos en stock de la base de datos
+	 * @param catalogoClientes Catalogo con todos los clientes de la base de datos
+	 * @param catalogoVentas Catalogo con todos las ventas de la base de datos
+	 * @param tipos Catalogo con todos los tipos de la base de datos
+	 * @throws HeadlessException
+	 */
+	public Interfaz(CatalogoStock catalogoStock, CatalogoClientes catalogoClientes, CatalogoVentas catalogoVentas, ArrayList<String> tipos) throws HeadlessException {
 		db = new BaseDatos();
+		this.catalogoStock = catalogoStock.getCatalogoStock();
+		this.catalogoClientes = catalogoClientes.getCatalogoClientes();
+		this.catalogoVentas = catalogoVentas.getCatalogoVentas();
+		
 		getContentPane().setBackground(new Color(65, 65, 65));
 		getContentPane().setLayout(null);
 		
@@ -59,9 +86,9 @@ public class Interfaz extends JFrame implements ActionListener{
 		modeloTablaStock.addColumn("Nombre de Producto");
 		modeloTablaStock.addColumn("Empresa");
 		modeloTablaStock.addColumn("Precio total");
-		modeloTablaStock.addColumn("Cantidad");
 		modeloTablaStock.addColumn("Fecha de Vencimiento");
 		modeloTablaStock.addColumn("Tipo de producto");
+		modeloTablaStock.addColumn("Cantidad");
 		modeloTablaClientes.addColumn("Dni");
 		modeloTablaClientes.addColumn("Nombre");
 		modeloTablaClientes.addColumn("Apellido");
@@ -74,16 +101,16 @@ public class Interfaz extends JFrame implements ActionListener{
 		modeloTablaVentas.addColumn("Fecha");
 		modeloTablaVentas.addColumn("Monto");
 		modeloTablaVentas.addColumn("Cantidad");
-		String stock[]= {"Codigo","Nombre de Producto","Empresa","Precio Total","Cantidad","Fecha de Vencimiento","Tipo de Producto"};
+		String stock[]= {"Codigo","Nombre de Producto","Empresa","Precio","Fecha de Vencimiento","Tipo de Producto","Cantidad"};
 		String clientes[] = {"Dni", "Nombre","Apellido","Direccion","Fecha de Nacimiento"};
-		String venta[] = {"ID de Venta","Dni Cliente","Codigo de Producto","Nombre de Producto", "Fecha","Monto", "Cantidad"};
+		String venta[] = {"ID de Venta","Dni Cliente","Codigo de Producto","Nombre de Producto", "Cantidad", "Fecha","Monto"};
 		modeloTablaStock.addRow(stock);
 		modeloTablaClientes.addRow(clientes);
 		modeloTablaVentas.addRow(venta);
 //		------MODELOS DE TABLAS-------
-		this.llenarTablaStock(CatalogoStock , modeloTablaStock);
-		this.llenarTablaUsuario(CatalogoClientes, modeloTablaClientes);
-		this.llenarTablaVentas(CatalogoVentas, modeloTablaVentas);
+		modeloTablaStock = this.llenarTablaStock(this.catalogoStock , modeloTablaStock);
+		this.llenarTablaUsuario(this.catalogoClientes, modeloTablaClientes);
+		this.llenarTablaVentas(this.catalogoVentas, modeloTablaVentas);
 //		-------------TABLAS-------
 		tableStock = new JTable(modeloTablaStock);
 		tableStock.setGridColor(new Color(0, 0, 0));
@@ -93,6 +120,23 @@ public class Interfaz extends JFrame implements ActionListener{
 		tableStock.setColumnSelectionAllowed(true);
 		tableStock.setBounds(47, 65, 736, 281);
 		tableStock.setVisible(true);
+		tableStock.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getSource() == tableStock) {
+					int seleccionar = tableStock.rowAtPoint(e.getPoint());
+					String codigo = String.valueOf(tableStock.getValueAt(seleccionar,0));
+					int opcion = JOptionPane.showConfirmDialog(getContentPane(), "¿Desea eliminar el producto "+String.valueOf(tableStock.getValueAt(seleccionar, 1))+"?", "Eliminar Producto de Stock", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					if(opcion==0) {
+						catalogoStock.eliminarProducto(codigo);
+						modeloTablaStock.removeRow(seleccionar);
+						if (db.eliminarStock(codigo)) {
+							JOptionPane.showMessageDialog(null, "El producto fue eliminado correctamente");
+						}
+					}
+				}
+			}
+		});
 		getContentPane().add(tableStock);
 		
 		tableClientes = new JTable();
@@ -105,6 +149,38 @@ public class Interfaz extends JFrame implements ActionListener{
 		getContentPane().add(tableClientes);
 		
 		tableVentas = new JTable();
+		tableVentas.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if(e.getSource() == tableVentas) {
+					int seleccionar = tableVentas.rowAtPoint(e.getPoint());
+					String IDventa = String.valueOf(tableVentas.getValueAt(seleccionar,0));
+					Clientes c = catalogoClientes.buscarDni(Integer.parseInt(String.valueOf(tableVentas.getValueAt(seleccionar, 1))));
+					String fecha = String.valueOf(tableVentas.getValueAt(seleccionar, 5));
+					ProductoStock p = catalogoStock.buscarCodigoProducto(String.valueOf(tableVentas.getValueAt(seleccionar, 2)));
+					int cantidad = Integer.parseInt(String.valueOf(tableVentas.getValueAt(seleccionar, 4)));
+					Double precioTotal = Double.parseDouble(String.valueOf(tableVentas.getValueAt(seleccionar, 6)));
+					int opcion = JOptionPane.showConfirmDialog(getContentPane(), "¿Desea emitir el ticket de la venta?", "Ticket de venta", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					if(opcion==0) {
+						System.out.printf("\n            SUPERMERCADO TRM            \n"
+								         + "----------------------------------------\n"
+								         + "****************************************\n"
+								         + "\n"
+								         + "Villanueva 1324 --------- 20-12345678-00\n"
+								         + "Belgrano\n"
+								         + "N.Transaccion:%-10s   %-15s\n"
+								         + "%-10s               %-15s\n"
+								         + "----------------------------------------\n"
+								         + "%-10s                    %-4.2f\n"
+								         + "x %-4d\n"
+								         + "\n"
+								         + "Total:                          $%-5.2f\n"
+								         + "----------------------------------------\n"
+								         + "****************************************", IDventa, c.getNombre() + " "+c.getApellido(), fecha,c.getDireccion(),p.getNombre(),p.getPrecio(),cantidad, precioTotal);
+					}
+				}
+			}
+		});
 		tableVentas.setBackground(new Color(183, 219, 255));
 		tableVentas.setVisible(false);
 		tableVentas.setBounds(47, 65, 736, 281);
@@ -238,6 +314,14 @@ public class Interfaz extends JFrame implements ActionListener{
 		tipoDeProductoLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		tipoDeProductoLabel.setBounds(601, 361, 130, 26);
 		getContentPane().add(tipoDeProductoLabel);
+		
+		btnVentanaVender = new JButton("Vender Producto");
+		btnVentanaVender.setVisible(false);
+		btnVentanaVender.addActionListener(this);
+		btnVentanaVender.setForeground(new Color(192, 192, 192));
+		btnVentanaVender.setBackground(new Color(0, 0, 128));
+		btnVentanaVender.setBounds(756, 445, 148, 42);
+		getContentPane().add(btnVentanaVender);
 //		-------------AGREGAR PRODUCTO-------
 	
 		setSize(1000,550);
@@ -251,63 +335,116 @@ public class Interfaz extends JFrame implements ActionListener{
 			this.tableStock.setVisible(true);
 			this.tableClientes.setVisible(false);
 			this.tableVentas.setVisible(false);
+			this.btnVentanaVender.setVisible(true);
 			this.tableStock.setModel(modeloTablaStock);
 		}
 		if(e.getSource() == this.usuario) {
 			this.tableStock.setVisible(false);
 			this.tableClientes.setVisible(true);
 			this.tableVentas.setVisible(false);
+			this.btnVentanaVender.setVisible(false);
 			this.tableClientes.setModel(modeloTablaClientes);
 		}
 		if(e.getSource() == this.ventas) {
 			this.tableStock.setVisible(false);
 			this.tableClientes.setVisible(false);
 			this.tableVentas.setVisible(true);
+			this.btnVentanaVender.setVisible(false);
 			this.tableVentas.setModel(modeloTablaVentas);
 		}
-		
-	}
-	
-	public void llenarTablaStock(ArrayList <ProductoStock> CatalogoStock , DefaultTableModel modelo) {
-		for (ProductoStock productoStock : CatalogoStock) {
-			Object StockFila [] = new Object [7];
-			StockFila[0] = productoStock.getCodigo();
-			StockFila[1] = productoStock.getNombre();
-			StockFila[2] = productoStock.getEmpresa();
-			StockFila[3] = productoStock.getPrecio();
-			StockFila[4] = productoStock.getCantidad();
-			StockFila[5] = productoStock.getFvecimiento();
-			StockFila[6] = productoStock.getTipo();
-			modelo.addRow(StockFila);
+		if(e.getSource() == this.btnVentanaVender) {
+			String IDproducto="";
+			try {
+				String IDcliente = JOptionPane.showInputDialog("Ingrese el dni del cliente");
+				if(IDcliente.equals("")) {
+					throw new NumberFormatException();
+				}
+				IDproducto = JOptionPane.showInputDialog("Ingrese el codigo del producto");
+				int cantidad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la cantidad que desea comprar"));
+				ProductoStock p = db.buscarProductoStock(IDproducto);
+				if(p!=null) {
+					 db.agregarVentas(Integer.parseInt(IDcliente), cantidad, p);
+					 this.catalogoVentas = db.obtenerVentas();
+					 this.modeloTablaVentas.addRow(this.catalogoVentas.get(this.catalogoVentas.size() -1).toString().split(","));
+					 this.tableVentas.setModel(modeloTablaVentas);
+				}else {
+					throw new NullPointerException();					
+				}
+			}catch(NumberFormatException f) {
+				JOptionPane.showMessageDialog(null, "No pueden quedar espacio vacios en los campos");
+			}catch(NullPointerException f) {
+				JOptionPane.showMessageDialog(null, "No se encontre el producto con el codigo "+IDproducto);
+			}
+			catch (Exception f) {
+				f.printStackTrace();
+			}
 		}
 	}
-	
+	/**
+	 * Metodo que llena la tabla de stock de la interfaz con productos
+	 * @param CatalogoStock ArrayList con ProductosStock
+	 * @param modelo Modelo de tabla
+	 * @return Devuelve el modelo de tabla con los registros
+	 */
+	public DefaultTableModel llenarTablaStock(ArrayList <ProductoStock> CatalogoStock , DefaultTableModel modelo) {
+		if(!CatalogoStock.isEmpty()) {
+			for (ProductoStock productoStock : CatalogoStock) {
+				Object StockFila [] = new Object [7];
+				StockFila[0] = productoStock.getCodigo();
+				StockFila[1] = productoStock.getNombre();
+				StockFila[2] = productoStock.getEmpresa();
+				StockFila[3] = productoStock.getPrecio();
+				StockFila[4] = productoStock.getFvecimiento();
+				StockFila[5] = productoStock.getTipo();
+				StockFila[6] = productoStock.getCantidad();
+				modelo.addRow(StockFila);
+			}
+		}
+		return modelo;
+	}
+	/**
+	 * Metodo que llena la tabla de clientes de la interfaz con productos
+	 * @param CatalogoStock ArrayList con Clientes
+	 * @param modelo Modelo de tabla
+	 * @return Devuelve el modelo de tabla con los registros
+	 */
 	public void llenarTablaUsuario(ArrayList <Clientes> CatalogoClientes , DefaultTableModel modelo) {
-		for (Clientes clientes : CatalogoClientes) {
-			Object StockFila [] = new Object [7];
-			StockFila[0] = clientes.getDni();
-			StockFila[1] = clientes.getNombre();
-			StockFila[2] = clientes.getApellido();
-			StockFila[3] = clientes.getDireccion();
-			StockFila[4] = clientes.getFnacimiento();
-			modelo.addRow(StockFila);
+		if (!CatalogoClientes.isEmpty()) {
+			for (Clientes clientes : CatalogoClientes) {
+				Object StockFila [] = new Object [7];
+				StockFila[0] = clientes.getDni();
+				StockFila[1] = clientes.getNombre();
+				StockFila[2] = clientes.getApellido();
+				StockFila[3] = clientes.getDireccion();
+				StockFila[4] = clientes.getFnacimiento();
+				modelo.addRow(StockFila);
+			}
 		}
 	}
-	
+	/**
+	 * Metodo que llena la tabla de ventas de la interfaz con productos
+	 * @param CatalogoStock ArrayList con Ventas
+	 * @param modelo Modelo de tabla
+	 * @return Devuelve el modelo de tabla con los registros
+	 */
 	public void llenarTablaVentas(ArrayList <Ventas> CatalogoVentas , DefaultTableModel modelo) {
-		for (Ventas ventas : CatalogoVentas) {
-			Object StockFila [] = new Object [7];
-			StockFila[0] = ventas.getIdVenta();
-			StockFila[1] = ventas.getDniCliente();
-			StockFila[2] = ventas.getCodigoProducto();
-			StockFila[3] = ventas.getNombreProducto();
-			StockFila[4] = ventas.getCantidad();
-			StockFila[5] = ventas.getFechaCompra();
-			StockFila[6] = ventas.getMonto();
-			modelo.addRow(StockFila);
+		if (!CatalogoVentas.isEmpty()) {
+			for (Ventas ventas : CatalogoVentas) {
+				Object StockFila [] = new Object [7];
+				StockFila[0] = ventas.getIdVenta();
+				StockFila[1] = ventas.getDniCliente();
+				StockFila[2] = ventas.getCodigoProducto();
+				StockFila[3] = ventas.getNombreProducto();
+				StockFila[4] = ventas.getCantidad();
+				StockFila[5] = ventas.getFechaCompra();
+				StockFila[6] = ventas.getMonto();
+				modelo.addRow(StockFila);
+			}
 		}
 	}
-	
+	/**
+	 * Metodo para validar los inputs y agregar un producto a stock
+	 */
 	public void ValidarYAgregarProducto() {
 		boolean validad=false;
 		JTextField Inputs [] = {this.agregarProductoNombre, this.agregarProductoEmpresa, this.agregarProductoCodigo, this.precio, this.vencimiento, this.cantidad};
@@ -318,19 +455,30 @@ public class Interfaz extends JFrame implements ActionListener{
 				validad=true;
 			}
 		}
+		String codigo="";
 		if(validad==false) {
-			int mensage = JOptionPane.showConfirmDialog(null, "Porfavor complete todos los campos antes de agregar un producto","",JOptionPane.DEFAULT_OPTION);
+			JOptionPane.showMessageDialog(null, "Tiene que completar los campos para continuar");
 		}else {
-			String codigo = this.agregarProductoCodigo.getText();
+			codigo = this.agregarProductoCodigo.getText();
 			String nombre = this.agregarProductoNombre.getText();
 			String empresa = this.agregarProductoEmpresa.getText();
 			Double precio = Double.parseDouble(this.precio.getText());
 			String fecha = this.vencimiento.getText();
 			String tipo = this.tipo.getSelectedItem();
 			int cantidad = Integer.parseInt(this.cantidad.getText());
-			boolean resultado = db.agregarStock(new Productos(codigo, nombre, empresa, precio, fecha,tipo), cantidad);
-			if(resultado) {
-				int mensage = JOptionPane.showConfirmDialog(null, "El producto fue agregado correctamente", "", JOptionPane.DEFAULT_OPTION);
+			String resultado = db.agregarStock(new Productos(codigo, nombre, empresa, precio, fecha,tipo), cantidad);
+			if(resultado.equals("a")) {
+				this.catalogoStock = db.obtenerStock();
+				this.modeloTablaStock.addRow(this.catalogoStock.get(this.catalogoStock.size()-1).toString().split(","));
+				this.tableStock.setModel(this.modeloTablaStock);
+			}else if(resultado.equals("m")) {
+				this.catalogoStock = db.obtenerStock();
+				CatalogoStock catalogo = new CatalogoStock(this.catalogoStock);
+				this.modeloTablaStock.setValueAt(catalogo.buscarCodigoProducto(codigo).getCantidad(),(this.catalogoStock.indexOf(catalogo.buscarCodigoProducto(codigo)) + 1), 6);
+			}
+			JOptionPane.showConfirmDialog(null, "El producto fue agregado correctamente", "", JOptionPane.DEFAULT_OPTION);
+			for (JTextField jTextField : Inputs) {
+				jTextField.setText("");
 			}
 		}
 	}

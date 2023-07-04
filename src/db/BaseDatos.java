@@ -2,10 +2,10 @@ package db;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 import clases.Clientes;
@@ -23,8 +23,6 @@ public class BaseDatos {
     private Connection conexion = null;
     private Statement stmt = null;
     private ResultSet clientes = null;
-    private ResultSet productos = null;
-    private ResultSet stock = null;
     private ResultSet ventas = null;
     private ResultSet tipos = null;
     private ResultSet consulta = null;
@@ -32,6 +30,10 @@ public class BaseDatos {
     private int insertRequest;
     private int updateRequest;
     private int deleteRequest;
+    private ZonedDateTime datetime = ZonedDateTime.now();
+    private String año;
+    private String mes;
+    private String dia;
     //-----------------------------
     //-----CONSTRUCTOR-------------
     //-----------------------------
@@ -39,6 +41,9 @@ public class BaseDatos {
      * Constructor de la clase
      */
     public BaseDatos() {
+    	año = String.valueOf(datetime.getYear());
+        mes = String.valueOf(datetime.getMonthValue());
+        dia = String.valueOf(datetime.getDayOfMonth());
         try {
             conexion = DriverManager.getConnection(url, "root", "batman");
             stmt = conexion.createStatement();
@@ -76,9 +81,6 @@ public class BaseDatos {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        if (aux.isEmpty()) {
-            aux = null;
-        }
         return aux;
     }
     /**
@@ -98,14 +100,10 @@ public class BaseDatos {
                 String fechaVecimiento = consulta.getString("productos.fvencimiento");
                 String tipo = consulta.getString("tipo.nombre");
                 int cantidad = Integer.parseInt(consulta.getString("cant_stock"));
-                String fechaStock = consulta.getString("stock.fecha");
                 aux.add(new ProductoStock(idStock,codigo, nombre, empresa, precio, fechaVecimiento, tipo, cantidad));
             }
         }catch (SQLException e) {
             e.printStackTrace();
-        }
-        if (aux.isEmpty()) {
-            aux = null;
         }
         return aux;
     }
@@ -127,6 +125,10 @@ public class BaseDatos {
         }
         return tiposArray;
     }
+    /**
+     * Metodo que devuelve un ArrayList con objetos de tipo Venta
+     * @return ArrayList de Ventas
+     */
     public ArrayList<Ventas> obtenerVentas() {
     	ArrayList<Ventas> aux = new ArrayList<Ventas>();
     	try {
@@ -144,21 +146,50 @@ public class BaseDatos {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-    	if(aux.isEmpty()) {
-    		aux=null;
-    	}
     	return aux;
 	}
+    /**
+     * Metodo para buscar en la tabla Productos por el codigo
+     * @param codigo Codigo del producto
+     * @return Devuleve el producto si lo encuentra, sino devuel null
+     */
     public Productos buscarProductoCodigo(String codigo) {
 		try {
 			consulta = stmt.executeQuery("SELECT productos.nombre, productos.empresa, productos.precio, productos.fvencimiento, tipo.nombre FROM productos INNER JOIN tipo ON productos.tipo = tipo.id_tipo WHERE productos.codigo = '"+codigo+"';");
+			if(consulta.next()) {
+				String nombre = consulta.getString("productos.nombre");
+				String empresa = consulta.getString("productos.empresa");
+				Double precio = Double.parseDouble(consulta.getString("productos.precio"));
+				String fecha = consulta.getString("productos.fvencimiento");
+				String tipo = consulta.getString("tipo.nombre");
+				return new Productos(codigo, nombre,empresa, precio, fecha,tipo);
+			}else {
+				throw new StockVacio();
+			}
+		} catch(StockVacio e) {
+			return null;
+		}catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+    /**
+     * Metodo para buscar en la tabla Stock un producto por su codigo
+     * @param codigo Codigo del producto
+     * @return Devuelve el producto si lo encuentra, sino devuelve null
+     */
+    public ProductoStock buscarProductoStock(String codigo) {
+		try {
+			consulta = stmt.executeQuery("SELECT * FROM stock INNER JOIN productos ON stock.id_producto = productos.codigo INNER JOIN tipo ON productos.tipo = tipo.id_tipo WHERE productos.codigo = '"+codigo+"'");
 			consulta.next();
+			int idStock = Integer.parseInt(consulta.getString("stock.id_stock"));
 			String nombre = consulta.getString("productos.nombre");
 			String empresa = consulta.getString("productos.empresa");
 			Double precio = Double.parseDouble(consulta.getString("productos.precio"));
 			String fecha = consulta.getString("productos.fvencimiento");
 			String tipo = consulta.getString("tipo.nombre");
-			return new Productos(codigo, nombre,empresa, precio, fecha,tipo);
+			int cantidad = Integer.parseInt(consulta.getString("stock.cant_stock"));
+			return new ProductoStock(idStock, codigo, nombre, empresa, precio, fecha, tipo, cantidad);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
@@ -167,6 +198,11 @@ public class BaseDatos {
     //-----------------------------
     //----METODOS DE INSERT--------
     //-----------------------------
+    /**
+     * Metodo que agrega a la tabla clientees un cliente
+     * @param c Clientes que se desea agregar
+     * @return Devuelve la confirmacion de la consulta
+     */
     public String agregarClientes(Clientes c) {
 		try {
 			insertRequest = stmt.executeUpdate("INSERT INTO clientes VALUES ("+c.getDni()+", '"+c.getNombre()+"', '"+c.getApellido()+"','"+c.getDireccion()+"', '"+c.getFnacimiento()+"');");
@@ -179,6 +215,11 @@ public class BaseDatos {
 			return "Error al agregar al cliente";
 		}
 	}
+    /**
+     * Metodo que agrega a la tabla Productos un producto
+     * @param p1 Producto que se desea agregar
+     * @return Devuelve la confirmacion de la consulta
+     */
     public boolean agregarProducto(Productos p1) {
          ArrayList<String> tipos = obtenerTipo();
          int numTipo=0;
@@ -198,19 +239,25 @@ public class BaseDatos {
             return false;
         }
     }
-    public boolean agregarStock(Productos p, int cantidad) {
+    /**
+     * Metodo para agregar a la tabla Stock el nuevo producto
+     * @param p Producto que se desea agregar
+     * @param cantidad Cantidad que se desea agregar
+     * @return Devuelva la confirmacion de la consulta {a: agregado, m:cantidad modificada, e:error}
+     */
+    public String agregarStock(Productos p, int cantidad) {
 		try {
 			if(this.buscarProductoCodigo(p.getCodigo()) == null) {
 				this.agregarProducto(p);
-				insertRequest = stmt.executeUpdate("INSERT INTO stock VALUES (NULL, '"+p.getCodigo()+"', '03/20/2023', "+cantidad+");");				
+				insertRequest = stmt.executeUpdate("INSERT INTO stock VALUES (NULL, '"+p.getCodigo()+"', '"+dia+"/"+mes+"/"+año+"', "+cantidad+");");				
 			}else {
 				this.aumentarCantidadStock(cantidad, p.getCodigo());
-				return true;
+				return "m";
 			}
-			return (insertRequest!=0)? true:false;
+			return (insertRequest!=0)? "a":"e";
 		} catch (SQLException e) {
 			e.printStackTrace();
-			return false;
+			return "e";
 		}
 	}
     /**
@@ -224,12 +271,14 @@ public class BaseDatos {
 		try {
 			if(cantidadDeseada < p.getCantidad()) {
 				double precio = p.getPrecio() * cantidadDeseada;
-				insertRequest = stmt.executeUpdate("INSERT INTO ventas VALUES(NULL, "+IDcliente+","+p.getIdStock()+",'',"+precio+");");
+				insertRequest = stmt.executeUpdate("INSERT INTO ventas VALUES(NULL, "+IDcliente+","+p.getIdStock()+",'"+dia+"/"+mes+"/"+año+"',"+precio+","+cantidadDeseada+");");
+				this.restarCantidadStock(cantidadDeseada, p.getCodigo());
 				return (insertRequest != 0)? "Compra realizada correctamente" : "Ocurrio un error en la compra";
 			}else {
 				throw new StockVacio();
 			}
 		} catch(StockVacio e) {
+			e.mesaje();
 			return e.getMessage();
 		}
 		catch (SQLException e) {
@@ -240,6 +289,12 @@ public class BaseDatos {
     //-----------------------------
     //-----METODOS DE UPDATE-------
     //-----------------------------
+    /**
+     * Metodo para modificar un producto de la tabla productos
+     * @param p Productos que se desea modificar
+     * @param codigoProducto Codigo del producto
+     * @return Devuelve la confirmacion
+     */
     public boolean modificarProductos(Productos p, String codigoProducto) {
 		try {
 			updateRequest = stmt.executeUpdate("UPDATE productos SET nombre = '"+p.getNombre()+"', empresa='"+p.getEmpresa()+"', precio= "+p.getPrecio()+", fvencimiento='"+p.getFvecimiento()+"', tipo="+p.getTipo()+" WHERE codigo='"+codigoProducto+"';");
@@ -250,6 +305,12 @@ public class BaseDatos {
 			return false;
 		}
 	}
+    /**
+     * Metodo para restar la cantidad de un producto en el Stock
+     * @param cantidad Cantidad que se desea restar
+     * @param codigo Codigo del producto que se desea restar
+     * @return Devuelve la confirmacion de si se pudo actualizar la cantidad
+     */
     public boolean restarCantidadStock(int cantidad, String codigo) {
     	try {
 			updateRequest = stmt.executeUpdate("UPDATE stock SET cant_stock = cant_stock - "+cantidad+" WHERE id_producto = '"+codigo+"';");
@@ -259,6 +320,12 @@ public class BaseDatos {
 			return false;
 		}
     }
+    /**
+     * Metodo para aumentar la cantidad de un producto en el Stock
+     * @param cantidad Cantidad que se desea aumentar
+     * @param codigo Codigo del producto que se desea aumentar
+     * @return Devuelve la confirmacion de si se pudo actualizar la cantidad
+     */
     public boolean aumentarCantidadStock(int cantidad, String codigo) {
     	try {
 			updateRequest = stmt.executeUpdate("UPDATE stock SET cant_stock = cant_stock + "+cantidad+" WHERE id_producto = '"+codigo+"';");
@@ -293,10 +360,26 @@ public class BaseDatos {
     public boolean eliminarProducto(String codigo) {
 		try {
 			deleteRequest = stmt.executeUpdate("DELETE FROM productos WHERE codigo='"+codigo+"';");
+			this.eliminarStock(codigo);
 			return (deleteRequest!=0)? true: false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
 		}
 	}
+    /**
+     * Metodo para eliminar un producto del Stock
+     * @param idProducto Id del producto en la tabla de Stock
+     * @return Devuele la confirmacion de si se pudo eliminar o no
+     */
+    public boolean eliminarStock(String idProducto) {
+    	try {
+			deleteRequest = stmt.executeUpdate("DELETE FROM stock WHERE id_producto = '"+idProducto+"';");
+			return (deleteRequest != 0)? true: false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+    
+    }
 }
