@@ -10,7 +10,7 @@ public class ProductoStock extends Productos{
 	}
 	@Override
 	public String toString() {
-		return super.toString()+"," + cantidad;
+		return super.toString()+", cantidad=" + cantidad;
 	}
 	public int getCantidad() {
 		return cantidad;

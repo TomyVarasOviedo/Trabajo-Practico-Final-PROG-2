@@ -39,6 +39,7 @@ public class Productos {
     }
 	@Override
 	public String toString() {
-		return codigo + "," + nombre + "," + empresa + "," + precio+ "," + fvecimiento + "," + tipo;
+		return "codigo=" + codigo + ", nombre=" + nombre + ", empresa=" + empresa + ", precio=" + precio
+				+ ", fvecimiento=" + fvecimiento + ", tipo=" + tipo;
 	}
 }

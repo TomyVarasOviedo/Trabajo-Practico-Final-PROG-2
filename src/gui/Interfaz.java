@@ -41,21 +41,11 @@ public class Interfaz extends JFrame implements ActionListener{
 	private JButton stockButton;
 	private JButton usuario;
 	private JButton ventas;
-	private JButton btnVentanaVender;
-	private BaseDatos db;
-	private ArrayList<ProductoStock> catalogoStock;
-	private ArrayList<Clientes> catalogoClientes;
-	private ArrayList<Ventas> catalogoVentas;
+	BaseDatos db;
+
 //constructor 
-	public Interfaz() {
-		
-	}
 	public Interfaz(ArrayList <ProductoStock> CatalogoStock, ArrayList <Clientes> CatalogoClientes, ArrayList <Ventas> CatalogoVentas, ArrayList<String> tipos) throws HeadlessException {
 		db = new BaseDatos();
-		this.catalogoStock = CatalogoStock;
-		this.catalogoClientes = CatalogoClientes;
-		this.catalogoVentas = CatalogoVentas;
-		
 		getContentPane().setBackground(new Color(65, 65, 65));
 		getContentPane().setLayout(null);
 		
@@ -84,16 +74,16 @@ public class Interfaz extends JFrame implements ActionListener{
 		modeloTablaVentas.addColumn("Fecha");
 		modeloTablaVentas.addColumn("Monto");
 		modeloTablaVentas.addColumn("Cantidad");
-		String stock[]= {"Codigo","Nombre de Producto","Empresa","Precio","Cantidad","Fecha de Vencimiento","Tipo de Producto"};
+		String stock[]= {"Codigo","Nombre de Producto","Empresa","Precio Total","Cantidad","Fecha de Vencimiento","Tipo de Producto"};
 		String clientes[] = {"Dni", "Nombre","Apellido","Direccion","Fecha de Nacimiento"};
-		String venta[] = {"ID de Venta","Dni Cliente","Codigo de Producto","Nombre de Producto", "Cantidad", "Fecha","Monto"};
+		String venta[] = {"ID de Venta","Dni Cliente","Codigo de Producto","Nombre de Producto", "Fecha","Monto", "Cantidad"};
 		modeloTablaStock.addRow(stock);
 		modeloTablaClientes.addRow(clientes);
 		modeloTablaVentas.addRow(venta);
 //		------MODELOS DE TABLAS-------
-		modeloTablaStock = this.llenarTablaStock(this.catalogoStock , modeloTablaStock);
-		this.llenarTablaUsuario(this.catalogoClientes, modeloTablaClientes);
-		this.llenarTablaVentas(this.catalogoVentas, modeloTablaVentas);
+		this.llenarTablaStock(CatalogoStock , modeloTablaStock);
+		this.llenarTablaUsuario(CatalogoClientes, modeloTablaClientes);
+		this.llenarTablaVentas(CatalogoVentas, modeloTablaVentas);
 //		-------------TABLAS-------
 		tableStock = new JTable(modeloTablaStock);
 		tableStock.setGridColor(new Color(0, 0, 0));
@@ -248,14 +238,6 @@ public class Interfaz extends JFrame implements ActionListener{
 		tipoDeProductoLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		tipoDeProductoLabel.setBounds(601, 361, 130, 26);
 		getContentPane().add(tipoDeProductoLabel);
-		
-		btnVentanaVender = new JButton("Vender Producto");
-		btnVentanaVender.setVisible(false);
-		btnVentanaVender.addActionListener(this);
-		btnVentanaVender.setForeground(new Color(192, 192, 192));
-		btnVentanaVender.setBackground(new Color(0, 0, 128));
-		btnVentanaVender.setBounds(756, 445, 148, 42);
-		getContentPane().add(btnVentanaVender);
 //		-------------AGREGAR PRODUCTO-------
 	
 		setSize(1000,550);
@@ -269,7 +251,6 @@ public class Interfaz extends JFrame implements ActionListener{
 			this.tableStock.setVisible(true);
 			this.tableClientes.setVisible(false);
 			this.tableVentas.setVisible(false);
-			this.btnVentanaVender.setVisible(true);
 			this.tableStock.setModel(modeloTablaStock);
 		}
 		if(e.getSource() == this.usuario) {
@@ -284,19 +265,10 @@ public class Interfaz extends JFrame implements ActionListener{
 			this.tableVentas.setVisible(true);
 			this.tableVentas.setModel(modeloTablaVentas);
 		}
-		if(e.getSource() == this.btnVentanaVender) {
-			String IDcliente = JOptionPane.showInputDialog("Ingrese el dni del cliente");
-			String IDproducto = JOptionPane.showInputDialog("Ingrese el codigo del producto");
-			int cantidad = Integer.parseInt(JOptionPane.showInputDialog("Ingrese la cantidad que desea comprar"));
-			ProductoStock p = db.buscarProductoStock(IDproducto);
-			db.agregarVentas(Integer.parseInt(IDcliente), cantidad, p);
-			this.catalogoVentas = db.obtenerVentas();
-			this.modeloTablaVentas.addRow(this.catalogoVentas.get(this.catalogoVentas.size() -1).toString().split(","));
-			this.tableVentas.setModel(modeloTablaVentas);
-		}
+		
 	}
 	
-	public DefaultTableModel llenarTablaStock(ArrayList <ProductoStock> CatalogoStock , DefaultTableModel modelo) {
+	public void llenarTablaStock(ArrayList <ProductoStock> CatalogoStock , DefaultTableModel modelo) {
 		for (ProductoStock productoStock : CatalogoStock) {
 			Object StockFila [] = new Object [7];
 			StockFila[0] = productoStock.getCodigo();
@@ -308,7 +280,6 @@ public class Interfaz extends JFrame implements ActionListener{
 			StockFila[6] = productoStock.getTipo();
 			modelo.addRow(StockFila);
 		}
-		return modelo;
 	}
 	
 	public void llenarTablaUsuario(ArrayList <Clientes> CatalogoClientes , DefaultTableModel modelo) {
@@ -348,7 +319,7 @@ public class Interfaz extends JFrame implements ActionListener{
 			}
 		}
 		if(validad==false) {
-			JOptionPane.showConfirmDialog(null, "Porfavor complete todos los campos antes de agregar un producto","",JOptionPane.DEFAULT_OPTION);
+			int mensage = JOptionPane.showConfirmDialog(null, "Porfavor complete todos los campos antes de agregar un producto","",JOptionPane.DEFAULT_OPTION);
 		}else {
 			String codigo = this.agregarProductoCodigo.getText();
 			String nombre = this.agregarProductoNombre.getText();
@@ -359,13 +330,7 @@ public class Interfaz extends JFrame implements ActionListener{
 			int cantidad = Integer.parseInt(this.cantidad.getText());
 			boolean resultado = db.agregarStock(new Productos(codigo, nombre, empresa, precio, fecha,tipo), cantidad);
 			if(resultado) {
-				JOptionPane.showConfirmDialog(null, "El producto fue agregado correctamente", "", JOptionPane.DEFAULT_OPTION);
-				this.catalogoStock = db.obtenerStock();
-				this.modeloTablaStock.addRow(this.catalogoStock.get(this.catalogoStock.size()-1).toString().split(","));
-				this.tableStock.setModel(this.modeloTablaStock);
-				for (JTextField jTextField : Inputs) {
-					jTextField.setText("");
-				}
+				int mensage = JOptionPane.showConfirmDialog(null, "El producto fue agregado correctamente", "", JOptionPane.DEFAULT_OPTION);
 			}
 		}
 	}

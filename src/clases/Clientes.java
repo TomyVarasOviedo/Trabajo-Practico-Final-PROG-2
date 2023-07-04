@@ -14,7 +14,8 @@ public class Clientes {
     }
 	@Override
 	public String toString() {
-		return dni + "," + nombre + "," + apellido + "," + direccion+ "," + fnacimiento;
+		return "dni=" + dni + ", nombre=" + nombre + ", apellido=" + apellido + ", direccion=" + direccion
+				+ ", fnacimiiento=" + fnacimiento;
 	}
 	public int getDni() {
 		return dni;

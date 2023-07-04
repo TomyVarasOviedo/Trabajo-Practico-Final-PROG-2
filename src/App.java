@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+
 import clases.CatalogoClientes;
 import clases.CatalogoStock;
 import clases.CatalogoVentas;
@@ -17,6 +18,5 @@ public class App {
         CatalogoVentas catalogoVentas = new CatalogoVentas(db.obtenerVentas());
         ArrayList<String> tipos = db.obtenerTipo();
         Interfaz inter = new Interfaz(catalogoStock.getCatalogoStock(), catalogoClientes.getCatalogoClientes(), catalogoVentas.getCatalogoVentas(), tipos);
-        db.eliminarProducto("sh345");
     }
 }
